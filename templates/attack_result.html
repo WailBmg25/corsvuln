@@ -1,0 +1,238 @@
+<!-- Attack Result Template Fragment -->
+<!-- This template is used to render individual attack results dynamically -->
+
+<div class="result-card {{ 'success' if result.success else 'failure' }}" data-attack-type="{{ result.attack_type }}">
+    <div class="result-header">
+        <h3>{{ result.attack_type | title }} Attack</h3>
+        <span class="result-status {{ 'success' if result.success else 'failure' }}">
+            {{ 'EXPLOITED ✓' if result.success else 'BLOCKED ✗' }}
+        </span>
+    </div>
+
+    <div class="result-details">
+        <p><strong>Duration:</strong> {{ "%.2f"|format(result.duration_seconds) }} seconds</p>
+        <p><strong>Requests Sent:</strong> {{ result.requests_sent }}</p>
+        {% if result.vulnerable_endpoints %}
+        <p><strong>Vulnerable Endpoints:</strong> {{ result.vulnerable_endpoints | join(', ') }}</p>
+        {% endif %}
+    </div>
+
+    {% if result.stolen_data %}
+    <div class="stolen-data">
+        <h4>🔓 Stolen Data</h4>
+        <div class="inspector">
+            <pre><code>{{ result.stolen_data | tojson(indent=2) }}</code></pre>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if result.request_details %}
+    <details class="inspector-details">
+        <summary><strong>📤 Request Details</strong></summary>
+        <div class="inspector">
+            {% for request in result.request_details %}
+            <div class="request-item">
+                <h5>Request {{ loop.index }}</h5>
+                <p><strong>Method:</strong> {{ request.method | default('GET') }}</p>
+                <p><strong>URL:</strong> {{ request.url }}</p>
+                
+                {% if request.headers %}
+                <h6>Headers:</h6>
+                <pre><code>{% for key, value in request.headers.items() %}{{ key }}: {{ value }}
+{% endfor %}</code></pre>
+                {% endif %}
+
+                {% if request.body %}
+                <h6>Body:</h6>
+                <pre><code>{{ request.body | tojson(indent=2) if request.body is mapping else request.body }}</code></pre>
+                {% endif %}
+
+                {% if request.cors_headers %}
+                <h6>CORS Headers Sent:</h6>
+                <pre><code>{% for key, value in request.cors_headers.items() %}{{ key }}: {{ value }}
+{% endfor %}</code></pre>
+                {% endif %}
+            </div>
+            {% if not loop.last %}<hr>{% endif %}
+            {% endfor %}
+        </div>
+    </details>
+    {% endif %}
+
+    {% if result.response_details %}
+    <details class="inspector-details" open>
+        <summary><strong>📥 Response Details (CORS Headers)</strong></summary>
+        <div class="inspector">
+            {% for response in result.response_details %}
+            <div class="response-item">
+                <h5>Response {{ loop.index }}</h5>
+                <p><strong>Status Code:</strong> {{ response.status_code }}</p>
+                
+                {% if response.headers %}
+                <h6>All Headers:</h6>
+                <pre><code>{% for key, value in response.headers.items() %}{{ key }}: {{ value }}
+{% endfor %}</code></pre>
+                {% endif %}
+
+                {% if response.cors_headers %}
+                <h6>CORS Headers Received:</h6>
+                <pre><code>{% for key, value in response.cors_headers.items() %}<span class="cors-header-key">{{ key }}</span>: <span class="cors-header-value">{{ value }}</span>
+{% endfor %}</code></pre>
+                {% endif %}
+
+                {% if response.body %}
+                <h6>Response Body:</h6>
+                <pre><code>{{ response.body | tojson(indent=2) if response.body is mapping else response.body }}</code></pre>
+                {% endif %}
+            </div>
+            {% if not loop.last %}<hr>{% endif %}
+            {% endfor %}
+        </div>
+    </details>
+    {% endif %}
+
+    {% if result.educational_notes %}
+    <div class="educational-note">
+        <h4>📚 Educational Notes</h4>
+        <p>{{ result.educational_notes }}</p>
+        
+        {% if result.reference %}
+        <p><strong>Reference:</strong> {{ result.reference }}</p>
+        {% endif %}
+        
+        {% if result.mitigation %}
+        <p><strong>Mitigation:</strong> {{ result.mitigation }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if result.curl_command %}
+    <details class="curl-details">
+        <summary><strong>🔧 Manual Testing with curl</strong></summary>
+        <pre><code>{{ result.curl_command }}</code></pre>
+        <p class="text-muted mt-2">Copy and paste this command to manually test the vulnerability</p>
+    </details>
+    {% endif %}
+
+    {% if result.error %}
+    <div class="error-message">
+        <h4>⚠️ Error</h4>
+        <p>{{ result.error }}</p>
+        {% if result.error_details %}
+        <pre><code>{{ result.error_details }}</code></pre>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Additional styles specific to attack results */
+.stolen-data {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: rgba(220, 53, 69, 0.1);
+    border-left: 4px solid var(--color-vulnerable);
+    border-radius: 4px;
+}
+
+.stolen-data h4 {
+    color: var(--color-vulnerable);
+    margin-bottom: 10px;
+}
+
+.inspector-details {
+    margin-top: 15px;
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    padding: 10px;
+    background-color: white;
+}
+
+.inspector-details summary {
+    cursor: pointer;
+    padding: 10px;
+    font-weight: 600;
+    color: var(--color-dark);
+    user-select: none;
+}
+
+.inspector-details summary:hover {
+    background-color: var(--color-light);
+    border-radius: 4px;
+}
+
+.inspector-details[open] summary {
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.request-item,
+.response-item {
+    margin-bottom: 20px;
+}
+
+.request-item h5,
+.response-item h5 {
+    color: var(--color-primary);
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.request-item h6,
+.response-item h6 {
+    color: var(--color-dark);
+    margin-top: 15px;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.request-item p,
+.response-item p {
+    margin-bottom: 8px;
+    color: var(--color-text-muted);
+}
+
+.request-item hr,
+.response-item hr {
+    margin: 20px 0;
+    border: none;
+    border-top: 1px solid var(--color-border);
+}
+
+.cors-header-key {
+    color: #e83e8c;
+    font-weight: 600;
+}
+
+.cors-header-value {
+    color: #20c997;
+}
+
+.error-message {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: rgba(255, 193, 7, 0.1);
+    border-left: 4px solid var(--color-warning);
+    border-radius: 4px;
+}
+
+.error-message h4 {
+    color: var(--color-warning);
+    margin-bottom: 10px;
+}
+
+.error-message p {
+    color: var(--color-text);
+    margin-bottom: 8px;
+}
+
+.error-message pre {
+    background-color: var(--color-dark);
+    color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-top: 10px;
+}
+</style>

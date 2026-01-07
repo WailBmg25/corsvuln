@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Démonstration des Vulnérabilités CORS</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-icon">🔒</div>
+                <div class="header-text">
+                    <h1>Démonstration des Vulnérabilités CORS</h1>
+                    <p class="subtitle">Outil éducatif pour comprendre les mauvaises configurations CORS et leurs implications en sécurité</p>
+                </div>
+            </div>
+            <div class="warning-banner">
+                <span class="warning-icon">⚠️</span>
+                <div class="warning-text">
+                    <strong>ATTENTION :</strong> Cette application contient des endpoints intentionnellement vulnérables à des fins éducatives uniquement.
+                    Ne jamais déployer en production ou sur des réseaux accessibles publiquement.
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="info-section">
+                <div class="info-header">
+                    <span class="info-icon">📚</span>
+                    <h2>À Propos de ce Projet</h2>
+                </div>
+                <p>{{ general.project_description }}</p>
+                <p><strong>Objectif :</strong> {{ general.purpose }}</p>
+                
+                <div class="credentials-box">
+                    <div class="credentials-header">
+                        <span class="credentials-icon">🔑</span>
+                        <h3>Identifiants de Test par Défaut</h3>
+                    </div>
+                    <div class="credentials-grid">
+                        <div class="credential-item">
+                            <span class="credential-label">Admin</span>
+                            <div class="credential-values">
+                                <code>admin</code> / <code>admin123</code>
+                            </div>
+                        </div>
+                        <div class="credential-item">
+                            <span class="credential-label">Utilisateur</span>
+                            <div class="credential-values">
+                                <code>user</code> / <code>user123</code>
+                            </div>
+                        </div>
+                        <div class="credential-item">
+                            <span class="credential-label">Victime</span>
+                            <div class="credential-values">
+                                <code>victim</code> / <code>victim123</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="endpoints-section">
+                <div class="section-header">
+                    <span class="section-icon">🔴</span>
+                    <h2>Endpoints Vulnérables</h2>
+                </div>
+                <p class="section-description">Ces endpoints démontrent des mauvaises configurations CORS courantes trouvées dans des applications réelles.</p>
+                
+                <div class="endpoints-grid">
+                    <div class="endpoint-card vulnerable" data-endpoint="wildcard">
+                        <div class="endpoint-header">
+                            <span class="status-indicator red"></span>
+                            <h3>Wildcard avec Identifiants</h3>
+                        </div>
+                        <div class="endpoint-path">
+                            <code>GET /api/vuln/wildcard</code>
+                        </div>
+                        <p class="endpoint-description">{{ vulnerabilities.wildcard.description }}</p>
+                        <div class="endpoint-details">
+                            <p><strong>Impact :</strong> {{ vulnerabilities.wildcard.impact }}</p>
+                            <p><strong>Référence :</strong> {{ vulnerabilities.wildcard.reference }}</p>
+                        </div>
+                        <button class="btn btn-attack" onclick="executeAttack('wildcard', event)">
+                            <span class="btn-icon">🎯</span>
+                            <span class="btn-text">Exécuter l'Attaque</span>
+                        </button>
+                        <details class="curl-details">
+                            <summary>Afficher la commande curl</summary>
+                            <pre><code>{{ vulnerabilities.wildcard.curl_example }}</code></pre>
+                        </details>
+                    </div>
+
+                    <div class="endpoint-card vulnerable" data-endpoint="reflection">
+                        <div class="endpoint-header">
+                            <span class="status-indicator red"></span>
+                            <h3>Réflexion d'Origine</h3>
+                        </div>
+                        <div class="endpoint-path">
+                            <code>POST /api/vuln/reflection</code>
+                        </div>
+                        <p class="endpoint-description">{{ vulnerabilities.reflection.description }}</p>
+                        <div class="endpoint-details">
+                            <p><strong>Impact :</strong> {{ vulnerabilities.reflection.impact }}</p>
+                            <p><strong>Référence :</strong> {{ vulnerabilities.reflection.reference }}</p>
+                        </div>
+                        <button class="btn btn-attack" onclick="executeAttack('reflection', event)">
+                            <span class="btn-icon">🎯</span>
+                            <span class="btn-text">Exécuter l'Attaque</span>
+                        </button>
+                        <details class="curl-details">
+                            <summary>Afficher la commande curl</summary>
+                            <pre><code>{{ vulnerabilities.reflection.curl_example }}</code></pre>
+                        </details>
+                    </div>
+
+                    <div class="endpoint-card vulnerable" data-endpoint="null_origin">
+                        <div class="endpoint-header">
+                            <span class="status-indicator red"></span>
+                            <h3>Acceptation d'Origine Null</h3>
+                        </div>
+                        <div class="endpoint-path">
+                            <code>GET /api/vuln/null-origin</code>
+                        </div>
+                        <p class="endpoint-description">{{ vulnerabilities.null_origin.description }}</p>
+                        <div class="endpoint-details">
+                            <p><strong>Impact :</strong> {{ vulnerabilities.null_origin.impact }}</p>
+                            <p><strong>Référence :</strong> {{ vulnerabilities.null_origin.reference }}</p>
+                        </div>
+                        <button class="btn btn-attack" onclick="executeAttack('null_origin', event)">
+                            <span class="btn-icon">🎯</span>
+                            <span class="btn-text">Exécuter l'Attaque</span>
+                        </button>
+                        <details class="curl-details">
+                            <summary>Afficher la commande curl</summary>
+                            <pre><code>{{ vulnerabilities.null_origin.curl_example }}</code></pre>
+                        </details>
+                    </div>
+
+                    <div class="endpoint-card vulnerable" data-endpoint="permissive">
+                        <div class="endpoint-header">
+                            <span class="status-indicator red"></span>
+                            <h3>Filtrage Permissif</h3>
+                        </div>
+                        <div class="endpoint-path">
+                            <code>GET /api/vuln/permissive</code>
+                        </div>
+                        <p class="endpoint-description">{{ vulnerabilities.permissive.description }}</p>
+                        <div class="endpoint-details">
+                            <p><strong>Impact :</strong> {{ vulnerabilities.permissive.impact }}</p>
+                            <p><strong>Référence :</strong> {{ vulnerabilities.permissive.reference }}</p>
+                        </div>
+                        <button class="btn btn-attack" onclick="executeAttack('permissive', event)">
+                            <span class="btn-icon">🎯</span>
+                            <span class="btn-text">Exécuter l'Attaque</span>
+                        </button>
+                        <details class="curl-details">
+                            <summary>Afficher la commande curl</summary>
+                            <pre><code>{{ vulnerabilities.permissive.curl_example }}</code></pre>
+                        </details>
+                    </div>
+
+                    <div class="endpoint-card vulnerable" data-endpoint="vary">
+                        <div class="endpoint-header">
+                            <span class="status-indicator red"></span>
+                            <h3>En-tête Vary Manquant</h3>
+                        </div>
+                        <div class="endpoint-path">
+                            <code>GET /api/vuln/vary</code>
+                        </div>
+                        <p class="endpoint-description">{{ vulnerabilities.vary.description }}</p>
+                        <div class="endpoint-details">
+                            <p><strong>Impact :</strong> {{ vulnerabilities.vary.impact }}</p>
+                            <p><strong>Référence :</strong> {{ vulnerabilities.vary.reference }}</p>
+                        </div>
+                        <button class="btn btn-attack" onclick="executeAttack('vary', event)">
+                            <span class="btn-icon">🎯</span>
+                            <span class="btn-text">Exécuter l'Attaque</span>
+                        </button>
+                        <details class="curl-details">
+                            <summary>Afficher la commande curl</summary>
+                            <pre><code>{{ vulnerabilities.vary.curl_example }}</code></pre>
+                        </details>
+                    </div>
+                </div>
+            </section>
+
+            <section class="endpoints-section secure-section">
+                <div class="section-header">
+                    <span class="section-icon">🟢</span>
+                    <h2>Endpoints Sécurisés</h2>
+                </div>
+                <p class="section-description">Ces endpoints démontrent des configurations CORS appropriées et les meilleures pratiques de sécurité.</p>
+                
+                <div class="endpoints-grid">
+                    <div class="endpoint-card secure" data-endpoint="wildcard_secure">
+                        <div class="endpoint-header">
+                            <span class="status-indicator green"></span>
+                            <h3>Alternative Wildcard Sécurisée</h3>
+                        </div>
+                        <div class="endpoint-path">
+                            <code>GET /api/sec/wildcard</code>
+                        </div>
+                        <p class="endpoint-description">{{ secure_implementations.wildcard.description }}</p>
+                        <div class="endpoint-details">
+                            <p><strong>Fonctionnalités :</strong></p>
+                            <ul>
+                                {% for feature in secure_implementations.wildcard.features %}
+                                <li>{{ feature }}</li>
+                                {% endfor %}
+                            </ul>
+                            <p><strong>Référence :</strong> {{ secure_implementations.wildcard.reference }}</p>
+                        </div>
+                        <button class="btn btn-test-secure" onclick="executeAttack('wildcard', event, true)">
+                            <span class="btn-icon">🛡️</span>
+                            <span class="btn-text">Tester la Protection</span>
+                        </button>
+                        <details class="curl-details">
+                            <summary>Afficher la commande curl</summary>
+                            <pre><code>{{ secure_implementations.wildcard.curl_example }}</code></pre>
+                        </details>
+                    </div>
+
+                    <div class="endpoint-card secure" data-endpoint="reflection_secure">
+                        <div class="endpoint-header">
+                            <span class="status-indicator green"></span>
+                            <h3>Validation d'Origine Sécurisée</h3>
+                        </div>
+                        <div class="endpoint-path">
+                            <code>POST /api/sec/reflection</code>
+                        </div>
+                        <p class="endpoint-description">{{ secure_implementations.reflection.description }}</p>
+                        <div class="endpoint-details">
+                            <p><strong>Fonctionnalités :</strong></p>
+                            <ul>
+                                {% for feature in secure_implementations.reflection.features %}
+                                <li>{{ feature }}</li>
+                                {% endfor %}
+                            </ul>
+                            <p><strong>Référence :</strong> {{ secure_implementations.reflection.reference }}</p>
+                        </div>
+                        <button class="btn btn-test-secure" onclick="executeAttack('reflection', event, true)">
+                            <span class="btn-icon">🛡️</span>
+                            <span class="btn-text">Tester la Protection</span>
+                        </button>
+                        <details class="curl-details">
+                            <summary>Afficher la commande curl</summary>
+                            <pre><code>{{ secure_implementations.reflection.curl_example }}</code></pre>
+                        </details>
+                    </div>
+
+                    <div class="endpoint-card secure" data-endpoint="null_origin_secure">
+                        <div class="endpoint-header">
+                            <span class="status-indicator green"></span>
+                            <h3>Rejet d'Origine Null</h3>
+                        </div>
+                        <div class="endpoint-path">
+                            <code>GET /api/sec/null-origin</code>
+                        </div>
+                        <p class="endpoint-description">{{ secure_implementations.null_origin.description }}</p>
+                        <div class="endpoint-details">
+                            <p><strong>Fonctionnalités :</strong></p>
+                            <ul>
+                                {% for feature in secure_implementations.null_origin.features %}
+                                <li>{{ feature }}</li>
+                                {% endfor %}
+                            </ul>
+                            <p><strong>Référence :</strong> {{ secure_implementations.null_origin.reference }}</p>
+                        </div>
+                        <button class="btn btn-test-secure" onclick="executeAttack('null_origin', event, true)">
+                            <span class="btn-icon">🛡️</span>
+                            <span class="btn-text">Tester la Protection</span>
+                        </button>
+                        <details class="curl-details">
+                            <summary>Afficher la commande curl</summary>
+                            <pre><code>{{ secure_implementations.null_origin.curl_example }}</code></pre>
+                        </details>
+                    </div>
+
+                    <div class="endpoint-card secure" data-endpoint="permissive_secure">
+                        <div class="endpoint-header">
+                            <span class="status-indicator green"></span>
+                            <h3>Correspondance Exacte d'Origine</h3>
+                        </div>
+                        <div class="endpoint-path">
+                            <code>GET /api/sec/permissive</code>
+                        </div>
+                        <p class="endpoint-description">{{ secure_implementations.permissive.description }}</p>
+                        <div class="endpoint-details">
+                            <p><strong>Fonctionnalités :</strong></p>
+                            <ul>
+                                {% for feature in secure_implementations.permissive.features %}
+                                <li>{{ feature }}</li>
+                                {% endfor %}
+                            </ul>
+                            <p><strong>Référence :</strong> {{ secure_implementations.permissive.reference }}</p>
+                        </div>
+                        <button class="btn btn-test-secure" onclick="executeAttack('permissive', event, true)">
+                            <span class="btn-icon">🛡️</span>
+                            <span class="btn-text">Tester la Protection</span>
+                        </button>
+                        <details class="curl-details">
+                            <summary>Afficher la commande curl</summary>
+                            <pre><code>{{ secure_implementations.permissive.curl_example }}</code></pre>
+                        </details>
+                    </div>
+
+                    <div class="endpoint-card secure" data-endpoint="vary_secure">
+                        <div class="endpoint-header">
+                            <span class="status-indicator green"></span>
+                            <h3>En-tête Vary Approprié</h3>
+                        </div>
+                        <div class="endpoint-path">
+                            <code>GET /api/sec/vary</code>
+                        </div>
+                        <p class="endpoint-description">{{ secure_implementations.vary.description }}</p>
+                        <div class="endpoint-details">
+                            <p><strong>Fonctionnalités :</strong></p>
+                            <ul>
+                                {% for feature in secure_implementations.vary.features %}
+                                <li>{{ feature }}</li>
+                                {% endfor %}
+                            </ul>
+                            <p><strong>Référence :</strong> {{ secure_implementations.vary.reference }}</p>
+                        </div>
+                        <button class="btn btn-test-secure" onclick="executeAttack('vary', event, true)">
+                            <span class="btn-icon">🛡️</span>
+                            <span class="btn-text">Tester la Protection</span>
+                        </button>
+                        <details class="curl-details">
+                            <summary>Afficher la commande curl</summary>
+                            <pre><code>{{ secure_implementations.vary.curl_example }}</code></pre>
+                        </details>
+                    </div>
+                </div>
+            </section>
+
+            <section class="results-section" id="results-section" style="display: none;">
+                <div class="results-header">
+                    <h2>📊 Résultats des Attaques</h2>
+                    <button class="btn btn-clear" onclick="clearResults()">
+                        <span class="btn-icon">🗑️</span>
+                        <span class="btn-text">Effacer</span>
+                    </button>
+                </div>
+                <div id="results-container">
+                    <!-- Les résultats seront insérés dynamiquement ici -->
+                </div>
+            </section>
+
+            <section class="references-section">
+                <div class="section-header">
+                    <span class="section-icon">📖</span>
+                    <h2>Références</h2>
+                </div>
+                <div class="references-grid">
+                    <div class="reference-card">
+                        <h3>{{ references.misc_98.title }}</h3>
+                        <p>{{ references.misc_98.description }}</p>
+                        <a href="{{ references.misc_98.url }}" target="_blank" rel="noopener">En savoir plus →</a>
+                    </div>
+                    <div class="reference-card">
+                        <h3>{{ references.misc_99.title }}</h3>
+                        <p>{{ references.misc_99.description }}</p>
+                        <a href="{{ references.misc_99.url }}" target="_blank" rel="noopener">En savoir plus →</a>
+                    </div>
+                    <div class="reference-card">
+                        <h3>{{ references.misc_hs4.title }}</h3>
+                        <p>{{ references.misc_hs4.description }}</p>
+                        <a href="{{ references.misc_hs4.url }}" target="_blank" rel="noopener">En savoir plus →</a>
+                    </div>
+                    <div class="reference-card">
+                        <h3>{{ references.mdn_cors.title }}</h3>
+                        <p>{{ references.mdn_cors.description }}</p>
+                        <a href="{{ references.mdn_cors.url }}" target="_blank" rel="noopener">En savoir plus →</a>
+                    </div>
+                    <div class="reference-card">
+                        <h3>{{ references.owasp_cors.title }}</h3>
+                        <p>{{ references.owasp_cors.description }}</p>
+                        <a href="{{ references.owasp_cors.url }}" target="_blank" rel="noopener">En savoir plus →</a>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>Projet de Démonstration des Vulnérabilités CORS - Usage Éducatif Uniquement</p>
+            <p>Basé sur les publications MISC 98, MISC 99 et MISC HS 4</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/attack_executor.js"></script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+{
+  "vulnerabilities": {
+    "wildcard": {
+      "title": "Origine Wildcard avec Identifiants",
+      "description": "L'utilisation de Access-Control-Allow-Origin: * avec les identifiants activés permet à n'importe quelle origine de faire des requêtes authentifiées. Ceci est explicitement interdit par la spécification CORS mais certaines implémentations peuvent le permettre, créant une vulnérabilité de sécurité critique.",
+      "reference": "MISC 99",
+      "impact": "Permet des attaques par force brute contre les endpoints d'authentification et permet à n'importe quel site web malveillant de voler les identifiants et jetons de session des utilisateurs. Un attaquant peut créer un site web malveillant qui fait des requêtes authentifiées vers l'API vulnérable et extraire des données sensibles.",
+      "mitigation": "Ne jamais utiliser l'origine wildcard (*) avec des identifiants. Toujours utiliser une liste blanche d'origines spécifiques avec correspondance exacte. Si vous devez supporter plusieurs origines, validez chaque origine contre une liste blanche prédéfinie et retournez uniquement l'origine correspondante dans l'en-tête Access-Control-Allow-Origin.",
+      "curl_example": "curl -X GET 'http://localhost:8000/api/vuln/wildcard' \\\n  -H 'Origin: https://evil.com' \\\n  -H 'Cookie: session_id=votre_session_id' \\\n  -v"
+    },
+    "reflection": {
+      "title": "Réflexion d'Origine Sans Validation",
+      "description": "Réfléchir la valeur de l'en-tête Origin directement dans Access-Control-Allow-Origin sans validation permet à n'importe quelle origine de contourner les protections CORS. C'est l'une des mauvaises configurations CORS les plus courantes dans les applications réelles.",
+      "reference": "MISC 99",
+      "impact": "Permet aux attaquants de voler des données sensibles en faisant des requêtes cross-origin authentifiées depuis des sites web malveillants. Le navigateur autorisera le site malveillant à lire les réponses car les en-têtes CORS indiquent que l'origine est autorisée. Cela peut mener à la prise de contrôle de compte, au vol de données et à des actions non autorisées.",
+      "mitigation": "Toujours valider l'en-tête Origin contre une liste blanche prédéfinie avant de le réfléchir. Utiliser une correspondance exacte de chaîne incluant le protocole (http/https) et le port. Ne jamais faire confiance à la valeur de l'en-tête Origin directement. Implémenter une liste blanche stricte d'origines autorisées et ne réfléchir que les origines qui correspondent exactement aux entrées de la liste blanche.",
+      "curl_example": "curl -X POST 'http://localhost:8000/api/vuln/reflection' \\\n  -H 'Origin: https://attacker.com' \\\n  -H 'Cookie: session_id=votre_session_id' \\\n  -H 'Content-Type: application/json' \\\n  -d '{}' \\\n  -v"
+    },
+    "null_origin": {
+      "title": "Acceptation d'Origine Null",
+      "description": "Accepter Origin: null est dangereux car cela peut être déclenché par des iframes sandboxées, des fichiers HTML locaux et certains contextes de navigateur. Les attaquants peuvent facilement créer des contextes qui envoient des origines null pour exploiter cette vulnérabilité.",
+      "reference": "MISC 99",
+      "impact": "Permet aux attaquants de contourner les protections CORS en utilisant des iframes sandboxées ou des fichiers HTML locaux. Un attaquant peut créer une iframe sandboxée qui fait des requêtes authentifiées vers l'API vulnérable et extrait des données sensibles en utilisant postMessage. C'est particulièrement dangereux car les origines null sont faciles à générer.",
+      "mitigation": "Rejeter explicitement les origines null avec un statut 403 Forbidden. Ne jamais inclure 'null' dans votre liste d'origines autorisées. Traiter les origines null comme non fiables et potentiellement malveillantes. Si vous devez supporter le développement local, utilisez des origines localhost spécifiques à la place.",
+      "curl_example": "curl -X GET 'http://localhost:8000/api/vuln/null-origin' \\\n  -H 'Origin: null' \\\n  -H 'Cookie: session_id=votre_session_id' \\\n  -v"
+    },
+    "permissive": {
+      "title": "Filtrage Permissif par Sous-chaîne",
+      "description": "Utiliser une correspondance de sous-chaîne (par ex., vérifier si l'origine contient 'trusted.com') au lieu d'une correspondance exacte permet aux attaquants de contourner la validation en utilisant des domaines comme 'attacker-trusted.com' ou 'trusted.com.evil.com'. C'est une erreur courante lors de l'implémentation de la validation d'origine.",
+      "reference": "MISC 99",
+      "impact": "Permet aux attaquants d'enregistrer des domaines malveillants qui contiennent la sous-chaîne de confiance et de contourner les protections CORS. Par exemple, si la validation vérifie 'trusted.com', un attaquant peut utiliser 'evil-trusted.com', 'trusted.com.attacker.com', ou 'attacker.com/trusted.com' pour contourner la vérification.",
+      "mitigation": "Toujours utiliser une correspondance exacte de chaîne incluant le protocole et le port. Comparer la chaîne d'origine entière contre votre liste blanche, pas seulement des sous-chaînes. Utiliser un analyseur d'URL approprié pour extraire et valider l'origine complète. Considérer l'utilisation d'expressions régulières avec des ancres (^ et $) si la correspondance de motif est nécessaire.",
+      "curl_example": "curl -X GET 'http://localhost:8000/api/vuln/permissive' \\\n  -H 'Origin: https://attacker-trusted.com' \\\n  -H 'Cookie: session_id=votre_session_id' \\\n  -v"
+    },
+    "vary": {
+      "title": "En-tête Vary Manquant (Empoisonnement de Cache)",
+      "description": "Lorsque différents en-têtes CORS sont servis en fonction de l'en-tête Origin sans inclure 'Vary: Origin', les caches peuvent servir des en-têtes CORS incorrects à différentes origines. Cela peut mener à des attaques d'empoisonnement de cache où l'origine d'un attaquant est mise en cache et servie aux utilisateurs légitimes.",
+      "reference": "MISC 99",
+      "impact": "Permet aux attaquants d'empoisonner les caches avec des en-têtes CORS malveillants. Un attaquant peut faire une requête depuis son origine, causant la mise en cache d'une réponse avec Access-Control-Allow-Origin défini au domaine de l'attaquant. Les requêtes subséquentes depuis des origines légitimes peuvent recevoir la réponse en cache avec l'origine de l'attaquant, brisant les protections CORS.",
+      "mitigation": "Toujours inclure l'en-tête 'Vary: Origin' lorsque les en-têtes CORS dépendent de l'en-tête Origin. Cela indique aux caches de stocker des réponses séparées pour différentes origines. De plus, inclure des en-têtes Cache-Control appropriés (no-store, no-cache, private) pour les endpoints sensibles afin d'empêcher complètement la mise en cache.",
+      "curl_example": "curl -X GET 'http://localhost:8000/api/vuln/vary' \\\n  -H 'Origin: https://attacker.com' \\\n  -H 'Cookie: session_id=votre_session_id' \\\n  -v"
+    }
+  },
+  "secure_implementations": {
+    "wildcard": {
+      "title": "Alternative Wildcard Sécurisée",
+      "description": "Au lieu d'utiliser wildcard avec des identifiants, cette implémentation utilise une liste blanche d'origines spécifiques. Le serveur valide l'en-tête Origin contre la liste blanche et retourne uniquement les origines correspondantes dans l'en-tête Access-Control-Allow-Origin.",
+      "reference": "MISC 99",
+      "features": [
+        "Liste blanche d'origines spécifiques",
+        "Correspondance exacte d'origine",
+        "Pas de wildcard avec identifiants",
+        "Validation appropriée d'origine"
+      ],
+      "curl_example": "curl -X GET 'http://localhost:8000/api/sec/wildcard' \\\n  -H 'Origin: https://example.com' \\\n  -H 'Cookie: session_id=votre_session_id' \\\n  -v"
+    },
+    "reflection": {
+      "title": "Validation d'Origine Sécurisée",
+      "description": "Cette implémentation valide les origines contre une liste blanche prédéfinie en utilisant une correspondance exacte de chaîne avant de les réfléchir. Seules les origines qui correspondent exactement aux entrées de la liste blanche (incluant protocole et port) sont acceptées.",
+      "reference": "MISC 99",
+      "features": [
+        "Liste blanche d'origines prédéfinie",
+        "Correspondance exacte de chaîne",
+        "Validation du protocole et du port",
+        "Rejet des origines non listées"
+      ],
+      "curl_example": "curl -X POST 'http://localhost:8000/api/sec/reflection' \\\n  -H 'Origin: https://example.com' \\\n  -H 'Cookie: session_id=votre_session_id' \\\n  -H 'Content-Type: application/json' \\\n  -d '{}' \\\n  -v"
+    },
+    "null_origin": {
+      "title": "Rejet d'Origine Null",
+      "description": "Cette implémentation rejette explicitement les origines null avec un statut 403 Forbidden. Toute requête avec Origin: null est immédiatement rejetée avant traitement.",
+      "reference": "MISC 99",
+      "features": [
+        "Rejet explicite d'origine null",
+        "Statut 403 Forbidden pour origines null",
+        "Messages d'erreur clairs",
+        "Pas de null dans la liste blanche"
+      ],
+      "curl_example": "curl -X GET 'http://localhost:8000/api/sec/null-origin' \\\n  -H 'Origin: null' \\\n  -H 'Cookie: session_id=votre_session_id' \\\n  -v"
+    },
+    "permissive": {
+      "title": "Correspondance Exacte d'Origine",
+      "description": "Cette implémentation utilise une correspondance exacte de chaîne incluant le protocole et le port. Les origines doivent correspondre exactement aux entrées de la liste blanche pour être acceptées, empêchant les attaques de contournement basées sur les sous-chaînes.",
+      "reference": "MISC 99",
+      "features": [
+        "Correspondance exacte de chaîne",
+        "Validation du protocole (http/https)",
+        "Validation du port",
+        "Pas de correspondance de sous-chaîne"
+      ],
+      "curl_example": "curl -X GET 'http://localhost:8000/api/sec/permissive' \\\n  -H 'Origin: https://trusted.com' \\\n  -H 'Cookie: session_id=votre_session_id' \\\n  -v"
+    },
+    "vary": {
+      "title": "En-tête Vary et Contrôle de Cache Appropriés",
+      "description": "Cette implémentation inclut l'en-tête Vary: Origin pour empêcher l'empoisonnement de cache et des en-têtes Cache-Control appropriés pour empêcher la mise en cache de données sensibles.",
+      "reference": "MISC 99",
+      "features": [
+        "En-tête Vary: Origin inclus",
+        "Cache-Control: no-store, no-cache",
+        "Pragma: no-cache",
+        "Expires: 0"
+      ],
+      "curl_example": "curl -X GET 'http://localhost:8000/api/sec/vary' \\\n  -H 'Origin: https://example.com' \\\n  -H 'Cookie: session_id=votre_session_id' \\\n  -v"
+    }
+  },
+  "references": {
+    "misc_98": {
+      "title": "MISC 98 - Comprendre le fonctionnement des CORS",
+      "description": "Concepts fondamentaux de CORS et comment fonctionne le mécanisme de Cross-Origin Resource Sharing dans les navigateurs modernes.",
+      "url": "https://connect.ed-diamond.com/MISC/misc-098"
+    },
+    "misc_99": {
+      "title": "MISC 99 - Cross Origin Resource Sharing: défauts de configurations, vulnérabilités et exploitations",
+      "description": "Guide complet sur les mauvaises configurations CORS, les vulnérabilités et les techniques d'exploitation. C'est la référence principale pour comprendre les problèmes de sécurité CORS.",
+      "url": "https://connect.ed-diamond.com/MISC/misc-099"
+    },
+    "misc_hs4": {
+      "title": "MISC HS 4 - Architectures web sécurisées",
+      "description": "Principes d'architecture web sécurisée incluant la configuration appropriée de CORS dans les applications web modernes.",
+      "url": "https://connect.ed-diamond.com/MISC/mischs-004"
+    },
+    "mdn_cors": {
+      "title": "MDN Web Docs - CORS",
+      "description": "Documentation officielle pour la spécification Cross-Origin Resource Sharing (CORS) et les meilleures pratiques.",
+      "url": "https://developer.mozilla.org/fr/docs/Web/HTTP/CORS"
+    },
+    "owasp_cors": {
+      "title": "OWASP - Cross-Origin Resource Sharing (CORS)",
+      "description": "Directives de sécurité OWASP pour implémenter CORS correctement et éviter les pièges courants.",
+      "url": "https://owasp.org/www-community/attacks/CORS_OriginHeaderScrutiny"
+    }
+  },
+  "general": {
+    "project_title": "Projet de Démonstration des Vulnérabilités CORS",
+    "project_description": "Une application FastAPI éducative démontrant des mauvaises configurations CORS réelles et leurs implications en sécurité. Ce projet présente à la fois des implémentations vulnérables et sécurisées avec des scripts d'attaque correspondants.",
+    "warning": "⚠️ ATTENTION : Cette application contient des endpoints intentionnellement vulnérables à des fins éducatives uniquement. Ne jamais déployer cette application dans un environnement de production ou sur un réseau accessible publiquement.",
+    "purpose": "Cet outil de démonstration est conçu pour l'éducation en sécurité, la formation et la recherche. Il aide les développeurs et les professionnels de la sécurité à comprendre les vulnérabilités CORS et à apprendre comment implémenter des configurations CORS sécurisées.",
+    "default_credentials": {
+      "admin": {
+        "username": "admin",
+        "password": "admin123",
+        "role": "admin"
+      },
+      "user": {
+        "username": "user",
+        "password": "user123",
+        "role": "user"
+      },
+      "victim": {
+        "username": "victim",
+        "password": "victim123",
+        "role": "user"
+      }
+    }
+  }
+}
