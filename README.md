@@ -1,551 +1,293 @@
-# CORS Vulnerability Demonstration Project
+# Projet de Démonstration des Vulnérabilités CORS
 
-⚠️ **EDUCATIONAL PURPOSE ONLY** ⚠️
+⚠️ **À DES FINS ÉDUCATIVES UNIQUEMENT** ⚠️
 
-**WARNING**: This application contains intentionally vulnerable endpoints for educational purposes only. Never deploy this application in a production environment or on a publicly accessible network.
+**AVERTISSEMENT** : Cette application contient des endpoints intentionnellement vulnérables à des fins éducatives uniquement. Ne jamais déployer cette application dans un environnement de production ou sur un réseau accessible publiquement.
 
-## Overview
+## Vue d'Ensemble
 
-The CORS Vulnerability Demonstration Project is an educational FastAPI application that demonstrates real-world CORS (Cross-Origin Resource Sharing) misconfigurations and their security implications. This project showcases both vulnerable and secure implementations with corresponding Python attack scripts that prove the vulnerabilities.
+Le Projet de Démonstration des Vulnérabilités CORS est une application FastAPI éducative qui démontre des mauvaises configurations CORS (Cross-Origin Resource Sharing) réelles et leurs implications en matière de sécurité. Ce projet présente à la fois des implémentations vulnérables et sécurisées avec des scripts d'attaque Python correspondants qui prouvent les vulnérabilités.
 
-This demonstration tool is designed for security education, training, and research. It helps developers and security professionals understand CORS vulnerabilities and learn how to implement secure CORS configurations.
+Cet outil de démonstration est conçu pour l'éducation en sécurité, la formation et la recherche. Il aide les développeurs et les professionnels de la sécurité à comprendre les vulnérabilités CORS et à apprendre comment implémenter des configurations CORS sécurisées.
 
-### Key Features
+### Fonctionnalités Clés
 
-- **Vulnerable Endpoints**: Intentionally misconfigured CORS implementations demonstrating common security issues
-- **Secure Endpoints**: Properly configured CORS implementations showing best practices
-- **Attack Scripts**: Automated Python scripts that exploit each vulnerability type
-- **Interactive Demo Interface**: Web-based dashboard for visualizing and executing attacks in real-time
-- **Educational Content**: Detailed explanations with references to MISC publications 98, 99, and HS 4
-- **Safety Mechanisms**: Rate limiting, timeouts, and sanitization to ensure safe demonstration
+- **Endpoints Vulnérables** : Implémentations CORS intentionnellement mal configurées démontrant des problèmes de sécurité courants
+- **Endpoints Sécurisés** : Implémentations CORS correctement configurées montrant les meilleures pratiques
+- **Scripts d'Attaque** : Scripts Python automatisés qui exploitent chaque type de vulnérabilité
+- **Interface de Démonstration Interactive** : Tableau de bord web pour visualiser et exécuter des attaques en temps réel
+- **Contenu Éducatif** : Explications détaillées avec références aux publications MISC 98, 99 et HS 4
+- **Mécanismes de Sécurité** : Rate limiting, timeouts et sanitization pour assurer une démonstration sûre
 
-## Quick Start
+## Démarrage Rapide
 
-### Using Docker (Recommended)
+### Utilisation avec Docker (Recommandé)
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd cors_project
+# Cloner le dépôt
+git clone git@github.com:WailBmg25/corsvuln.git
+cd corsvuln
 
-# Copy environment variables
+# Copier les variables d'environnement
 cp .env.example .env
 
-# Build and run with Docker Compose
+# Construire et lancer avec Docker Compose
 docker-compose up --build
 
-# Access the application
-# Open http://localhost:8000 in your browser
+# Accéder à l'application
+# Ouvrir http://localhost:8000 dans votre navigateur
 ```
 
-### Local Development
+### Développement Local
 
 ```bash
-# Create and activate virtual environment
+# Créer et activer l'environnement virtuel
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Sur Windows: venv\Scripts\activate
 
-# Install dependencies
+# Installer les dépendances
 pip install -r requirements.txt
 
-# Copy environment variables
+# Copier les variables d'environnement
 cp .env.example .env
 
-# Run the application
+# Lancer l'application
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
-# Access the application
-# Open http://localhost:8000 in your browser
+# Accéder à l'application
+# Ouvrir http://localhost:8000 dans votre navigateur
 ```
 
-### Default Test Accounts
+### Comptes de Test par Défaut
 
-The application initializes with three test accounts for demonstration:
+L'application s'initialise avec trois comptes de test pour la démonstration :
 
-- **Admin**: `admin` / `admin123` (full privileges)
-- **User**: `user` / `user123` (limited privileges)
-- **Victim**: `victim` / `victim123` (standard user for demonstrations)
+- **Admin** : `admin` / `admin123` (privilèges complets)
+- **User** : `user` / `user123` (privilèges limités)
+- **Victim** : `victim` / `victim123` (utilisateur standard pour les démonstrations)
 
-## Vulnerability Types
+## Types de Vulnérabilités
 
-This project demonstrates five major CORS misconfigurations based on MISC publications:
+Ce projet démontre cinq mauvaises configurations CORS majeures basées sur les publications MISC :
 
-### 1. Wildcard Origin with Credentials (`/api/vuln/wildcard`)
+### 1. Origine Wildcard avec Credentials (`/api/vuln/wildcard`)
 
-**Vulnerability**: Using `Access-Control-Allow-Origin: *` with credentials enabled
+**Vulnérabilité** : Utilisation de `Access-Control-Allow-Origin: *` avec credentials activés
 
-**Reference**: MISC 99, §2.1
+**Référence** : MISC 99
 
-**Impact**: Enables brute force attacks against authentication endpoints and allows any malicious website to steal user credentials and session tokens.
+**Impact** : Permet des attaques par force brute contre les endpoints d'authentification et permet à n'importe quel site web malveillant de voler les credentials et tokens de session des utilisateurs.
 
-**Expected Output**:
-```http
-HTTP/1.1 200 OK
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Credentials: true
-Content-Type: application/json
-
-{
-  "username": "victim",
-  "email": "victim@example.com",
-  "role": "user"
-}
-```
-
-**Sample curl command**:
+**Commande curl exemple** :
 ```bash
 curl -X GET 'http://localhost:8000/api/vuln/wildcard' \
   -H 'Origin: https://evil.com' \
-  -H 'Cookie: session_id=your_session_id' \
+  -H 'Cookie: session_id=votre_session_id' \
   -v
 ```
 
-**Secure Alternative** (`/api/sec/wildcard`): Uses specific origin whitelist with exact matching
+**Alternative Sécurisée** (`/api/sec/wildcard`) : Utilise une liste blanche d'origines spécifiques avec correspondance exacte
 
 ---
 
-### 2. Origin Reflection Without Validation (`/api/vuln/reflection`)
+### 2. Réflexion d'Origine Sans Validation (`/api/vuln/reflection`)
 
-**Vulnerability**: Reflecting the Origin header value directly in `Access-Control-Allow-Origin` without validation
+**Vulnérabilité** : Réflexion de la valeur de l'en-tête Origin directement dans `Access-Control-Allow-Origin` sans validation
 
-**Reference**: MISC 99, §2.2
+**Référence** : MISC 99
 
-**Impact**: Allows attackers to steal sensitive data by making authenticated cross-origin requests from malicious websites. This is one of the most common CORS misconfigurations.
+**Impact** : Permet aux attaquants de voler des données sensibles en effectuant des requêtes cross-origin authentifiées depuis des sites web malveillants. C'est l'une des mauvaises configurations CORS les plus courantes.
 
-**Expected Output**:
-```http
-HTTP/1.1 200 OK
-Access-Control-Allow-Origin: https://attacker.com
-Access-Control-Allow-Credentials: true
-Content-Type: application/json
-
-{
-  "transactions": [
-    {"id": 1, "amount": 1000, "recipient": "account123"}
-  ]
-}
-```
-
-**Sample curl command**:
+**Commande curl exemple** :
 ```bash
 curl -X POST 'http://localhost:8000/api/vuln/reflection' \
   -H 'Origin: https://attacker.com' \
-  -H 'Cookie: session_id=your_session_id' \
+  -H 'Cookie: session_id=votre_session_id' \
   -H 'Content-Type: application/json' \
   -d '{}' \
   -v
 ```
 
-**Secure Alternative** (`/api/sec/reflection`): Validates origins against predefined whitelist with exact matching
+**Alternative Sécurisée** (`/api/sec/reflection`) : Valide les origines contre une liste blanche prédéfinie avec correspondance exacte
 
 ---
 
-### 3. Null Origin Acceptance (`/api/vuln/null-origin`)
+### 3. Acceptation d'Origine Null (`/api/vuln/null-origin`)
 
-**Vulnerability**: Accepting `Origin: null` from sandboxed iframes or local files
+**Vulnérabilité** : Acceptation de `Origin: null` depuis des iframes sandboxées ou des fichiers locaux
 
-**Reference**: MISC 99, §2.3
+**Référence** : MISC 99
 
-**Impact**: Allows attackers to bypass CORS protections using sandboxed iframes or local HTML files. Null origins are easy to generate and exploit.
+**Impact** : Permet aux attaquants de contourner les protections CORS en utilisant des iframes sandboxées ou des fichiers HTML locaux. Les origines null sont faciles à générer et à exploiter.
 
-**Expected Output**:
-```http
-HTTP/1.1 200 OK
-Access-Control-Allow-Origin: null
-Access-Control-Allow-Credentials: true
-Content-Type: application/json
-
-{
-  "api_keys": [
-    {"key": "sk_live_abc123", "name": "Production API Key"}
-  ]
-}
-```
-
-**Sample curl command**:
+**Commande curl exemple** :
 ```bash
 curl -X GET 'http://localhost:8000/api/vuln/null-origin' \
   -H 'Origin: null' \
-  -H 'Cookie: session_id=your_session_id' \
+  -H 'Cookie: session_id=votre_session_id' \
   -v
 ```
 
-**Secure Alternative** (`/api/sec/null-origin`): Explicitly rejects null origins with 403 Forbidden
+**Alternative Sécurisée** (`/api/sec/null-origin`) : Rejette explicitement les origines null avec 403 Forbidden
 
 ---
 
-### 4. Permissive Substring Filtering (`/api/vuln/permissive`)
+### 4. Filtrage Permissif par Sous-chaîne (`/api/vuln/permissive`)
 
-**Vulnerability**: Using substring matching (e.g., checking if origin contains "trusted.com") instead of exact matching
+**Vulnérabilité** : Utilisation de correspondance de sous-chaîne (ex: vérifier si l'origine contient "trusted.com") au lieu d'une correspondance exacte
 
-**Reference**: MISC 99, §2.4
+**Référence** : MISC 99
 
-**Impact**: Allows attackers to register malicious domains like `attacker-trusted.com` or `trusted.com.evil.com` to bypass validation.
+**Impact** : Permet aux attaquants d'enregistrer des domaines malveillants comme `attacker-trusted.com` ou `trusted.com.evil.com` pour contourner la validation.
 
-**Expected Output**:
-```http
-HTTP/1.1 200 OK
-Access-Control-Allow-Origin: https://attacker-trusted.com
-Access-Control-Allow-Credentials: true
-Content-Type: application/json
-
-{
-  "admin_settings": {
-    "debug_mode": true,
-    "secret_key": "super_secret_key_123"
-  }
-}
-```
-
-**Sample curl command**:
+**Commande curl exemple** :
 ```bash
 curl -X GET 'http://localhost:8000/api/vuln/permissive' \
   -H 'Origin: https://attacker-trusted.com' \
-  -H 'Cookie: session_id=your_session_id' \
+  -H 'Cookie: session_id=votre_session_id' \
   -v
 ```
 
-**Secure Alternative** (`/api/sec/permissive`): Uses exact string matching including protocol and port
+**Alternative Sécurisée** (`/api/sec/permissive`) : Utilise une correspondance exacte de chaîne incluant le protocole et le port
 
 ---
 
-### 5. Missing Vary Header - Cache Poisoning (`/api/vuln/vary`)
+### 5. En-tête Vary Manquant - Empoisonnement de Cache (`/api/vuln/vary`)
 
-**Vulnerability**: Serving different CORS headers based on Origin without including `Vary: Origin` header
+**Vulnérabilité** : Servir différents en-têtes CORS basés sur Origin sans inclure l'en-tête `Vary: Origin`
 
-**Reference**: MISC 99, §3.1
+**Référence** : MISC 99
 
-**Impact**: Allows attackers to poison caches with malicious CORS headers, causing legitimate users to receive responses with attacker's origin.
+**Impact** : Permet aux attaquants d'empoisonner les caches avec des en-têtes CORS malveillants, causant aux utilisateurs légitimes de recevoir des réponses avec l'origine de l'attaquant.
 
-**Expected Output**:
-```http
-HTTP/1.1 200 OK
-Access-Control-Allow-Origin: https://attacker.com
-Access-Control-Allow-Credentials: true
-Content-Type: application/json
-(Missing Vary: Origin header)
-
-{
-  "cached_content": "This response may be cached with wrong CORS headers"
-}
-```
-
-**Sample curl command**:
+**Commande curl exemple** :
 ```bash
 curl -X GET 'http://localhost:8000/api/vuln/vary' \
   -H 'Origin: https://attacker.com' \
-  -H 'Cookie: session_id=your_session_id' \
+  -H 'Cookie: session_id=votre_session_id' \
   -v
 ```
 
-**Secure Alternative** (`/api/sec/vary`): Includes `Vary: Origin` and proper cache control headers
+**Alternative Sécurisée** (`/api/sec/vary`) : Inclut `Vary: Origin` et des en-têtes de contrôle de cache appropriés
 
 ---
 
-## Attack Scripts
+## Scripts d'Attaque
 
-The project includes automated attack scripts that demonstrate exploitation of each vulnerability:
+Le projet inclut des scripts d'attaque automatisés qui démontrent l'exploitation de chaque vulnérabilité :
 
-### 1. Brute Force Attack (`attacks/brute_force.py`)
-
-Exploits the wildcard origin vulnerability to perform brute force authentication attacks.
-
-**Expected Output**:
-```json
-{
-  "attack_type": "brute_force",
-  "success": true,
-  "duration_seconds": 2.5,
-  "requests_sent": 10,
-  "stolen_data": {
-    "valid_credentials": [
-      {"username": "admin", "password": "admin123"}
-    ]
-  },
-  "vulnerable_endpoints": ["/api/vuln/wildcard"]
-}
-```
-
-### 2. Origin Reflection Attack (`attacks/reflection.py`)
-
-Uses browser automation to exploit origin reflection vulnerability.
-
-**Expected Output**:
-```json
-{
-  "attack_type": "reflection",
-  "success": true,
-  "duration_seconds": 5.2,
-  "requests_sent": 3,
-  "stolen_data": {
-    "transactions": [
-      {"id": 1, "amount": 1000, "recipient": "account123"}
-    ]
-  },
-  "vulnerable_endpoints": ["/api/vuln/reflection"]
-}
-```
-
-### 3. Null Origin Attack (`attacks/null_origin.py`)
-
-Creates sandboxed iframe context to exploit null origin acceptance.
-
-**Expected Output**:
-```json
-{
-  "attack_type": "null_origin",
-  "success": true,
-  "duration_seconds": 3.1,
-  "requests_sent": 2,
-  "stolen_data": {
-    "api_keys": [
-      {"key": "sk_live_abc123", "name": "Production API Key"}
-    ]
-  },
-  "vulnerable_endpoints": ["/api/vuln/null-origin"]
-}
-```
-
-### 4. Permissive Filtering Attack (`attacks/permissive.py`)
-
-Tests multiple malicious origin variations to bypass substring filtering.
-
-**Expected Output**:
-```json
-{
-  "attack_type": "permissive",
-  "success": true,
-  "duration_seconds": 1.8,
-  "requests_sent": 5,
-  "stolen_data": {
-    "accepted_origins": [
-      "https://attacker-trusted.com",
-      "https://trusted.com.evil.com"
-    ],
-    "admin_settings": {
-      "debug_mode": true,
-      "secret_key": "super_secret_key_123"
-    }
-  },
-  "vulnerable_endpoints": ["/api/vuln/permissive"]
-}
-```
-
-### 5. Cache Poisoning Attack (`attacks/vary_attack.py`)
-
-Demonstrates cache poisoning via missing Vary header.
-
-**Expected Output**:
-```json
-{
-  "attack_type": "vary_attack",
-  "success": true,
-  "duration_seconds": 2.3,
-  "requests_sent": 4,
-  "stolen_data": {
-    "cache_poisoned": true,
-    "malicious_origin_cached": "https://attacker.com"
-  },
-  "vulnerable_endpoints": ["/api/vuln/vary"]
-}
-```
-
-## Project Structure
-
-```
-.
-├── app/
-│   ├── auth/                    # Authentication and session management
-│   │   ├── middleware.py        # Authentication middleware
-│   │   ├── models.py            # User and session models
-│   │   └── session_manager.py   # Session store implementation
-│   ├── middleware/              # Custom CORS middleware
-│   │   ├── cors_config.py       # CORS configuration per route
-│   │   ├── cors_middleware.py   # Custom CORS middleware
-│   │   └── origin_validation.py # Origin validation utilities
-│   ├── models/                  # Data models
-│   │   └── errors.py            # Error response models
-│   ├── routers/                 # API endpoints
-│   │   ├── auth.py              # Authentication endpoints
-│   │   ├── demo.py              # Demo interface routes
-│   │   ├── secure.py            # Secure CORS endpoints
-│   │   └── vulnerable.py        # Vulnerable CORS endpoints
-│   ├── utils/                   # Utility functions
-│   │   └── sanitization.py      # Output sanitization
-│   ├── error_handlers.py        # Error handling
-│   └── rate_limiter.py          # Rate limiting implementation
-├── attacks/                     # Attack scripts
-│   ├── base_attack.py           # Base attack class
-│   ├── brute_force.py           # Brute force attack
-│   ├── models.py                # Attack result models
-│   ├── null_origin.py           # Null origin attack
-│   ├── permissive.py            # Permissive filtering attack
-│   ├── reflection.py            # Origin reflection attack
-│   └── vary_attack.py           # Cache poisoning attack
-├── static/                      # Static files
-│   ├── css/
-│   │   └── styles.css           # Styling with color coding
-│   └── js/
-│       └── attack_executor.js   # Client-side attack execution
-├── templates/                   # HTML templates
-│   ├── attack_result.html       # Attack result display
-│   └── dashboard.html           # Main dashboard
-├── tests/                       # Test files
-├── .env.example                 # Environment variable template
-├── Dockerfile                   # Container configuration
-├── docker-compose.yml           # Docker Compose configuration
-├── educational_content.json     # Educational content and references
-├── main.py                      # Application entry point
-├── requirements.txt             # Python dependencies
-└── README.md                    # This file
-```
-
-## Security Recommendations
-
-### For Developers
-
-1. **Never use wildcard origin with credentials**: Always use specific origin whitelists
-2. **Validate origins strictly**: Use exact string matching including protocol and port
-3. **Reject null origins**: Explicitly reject `Origin: null` with 403 status
-4. **Include Vary header**: Always include `Vary: Origin` when CORS headers depend on origin
-5. **Use proper cache control**: Prevent caching of sensitive data with appropriate headers
-6. **Test your CORS configuration**: Use tools like this project to verify your implementation
-
-### For Security Professionals
-
-1. **Test for CORS misconfigurations**: Include CORS testing in security assessments
-2. **Look for origin reflection**: Check if applications reflect Origin header without validation
-3. **Test with null origins**: Verify that applications properly reject null origins
-4. **Check for substring matching**: Test with malicious domains containing trusted substrings
-5. **Verify Vary headers**: Ensure applications include proper Vary headers for cached responses
-
-## Deployment Warnings
-
-⚠️ **CRITICAL SECURITY WARNINGS** ⚠️
-
-This application is designed for **educational purposes only** and should **NEVER** be deployed in:
-
-- Production environments
-- Publicly accessible networks
-- Any environment with real user data
-- Any environment connected to the internet
-
-### Recommended Deployment Environments
-
-✅ **Safe Environments**:
-- Isolated local development environment
-- Classroom or training lab with network isolation
-- Docker container with no external network access
-- Virtual machines on isolated networks
-- Localhost-only access
-
-### Safety Mechanisms
-
-The application includes several safety mechanisms:
-
-1. **Rate Limiting**: Maximum 5 requests per second to prevent resource exhaustion
-2. **Execution Timeout**: All attack scripts timeout after 60 seconds
-3. **Input Sanitization**: All user input is sanitized before rendering to prevent XSS
-4. **No Persistent Storage**: Attack scripts don't persist data beyond execution context
-5. **Warning Banners**: Clear warnings displayed before attack execution
-6. **Session Isolation**: Sessions are isolated between users
-7. **In-Memory Storage**: All data stored in memory, cleared on restart
-
-## Running Tests
+### Utilisation CLI
 
 ```bash
-# Run all tests
-pytest
+# Exécuter une attaque sur l'endpoint vulnérable
+python run_attack_cli.py wildcard
 
-# Run specific test file
-pytest test_cors_middleware.py
+# Exécuter une attaque sur l'endpoint sécurisé
+python run_attack_cli.py wildcard --secure
 
-# Run with coverage
-pytest --cov=app --cov-report=html
-
-# Run property-based tests
-pytest test_attack_scripts.py -v
+# Autres types d'attaques disponibles
+python run_attack_cli.py reflection
+python run_attack_cli.py null_origin
+python run_attack_cli.py permissive
+python run_attack_cli.py vary
 ```
 
-## API Documentation
+## Structure du Projet
 
-Once the application is running, access the interactive API documentation:
+```
+corsvuln/
+├── app/                    # Application FastAPI
+│   ├── auth/              # Module d'authentification
+│   ├── middleware/        # Middleware CORS
+│   ├── models/            # Modèles de données
+│   ├── routers/           # Routes API (vulnérables & sécurisées)
+│   └── utils/             # Utilitaires (sanitization, etc.)
+├── attacks/               # Scripts d'attaque
+│   ├── brute_force.py    # Attaque wildcard
+│   ├── reflection.py     # Attaque par réflexion d'origine
+│   ├── null_origin.py    # Attaque origine null
+│   ├── permissive.py     # Attaque filtrage permissif
+│   └── vary_attack.py    # Attaque en-tête Vary
+├── static/                # Assets frontend (CSS, JS)
+├── templates/             # Templates HTML
+├── educational_content.json  # Contenu éducatif
+├── main.py               # Point d'entrée de l'application
+├── run_attack_cli.py     # CLI pour exécuter les attaques
+└── requirements.txt      # Dépendances Python
+```
 
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+## Recommandations de Sécurité
 
-## References
+### Pour les Développeurs
 
-This project is based on research and publications from the French security magazine MISC:
+1. **Ne jamais utiliser wildcard origin avec credentials** : Toujours utiliser des listes blanches d'origines spécifiques
+2. **Valider les origines strictement** : Utiliser une correspondance exacte de chaîne incluant le protocole et le port
+3. **Rejeter les origines null** : Rejeter explicitement `Origin: null` avec le statut 403
+4. **Inclure l'en-tête Vary** : Toujours inclure `Vary: Origin` quand les en-têtes CORS dépendent de l'origine
+5. **Utiliser un contrôle de cache approprié** : Empêcher la mise en cache de données sensibles avec des en-têtes appropriés
 
-### Primary References
+### Pour les Professionnels de la Sécurité
 
-- **MISC 98**: "Comprendre le fonctionnement des CORS" - Fundamental CORS concepts and how the Cross-Origin Resource Sharing mechanism works in modern browsers.
+1. **Tester les mauvaises configurations CORS** : Inclure les tests CORS dans les évaluations de sécurité
+2. **Rechercher la réflexion d'origine** : Vérifier si les applications reflètent l'en-tête Origin sans validation
+3. **Tester avec des origines null** : Vérifier que les applications rejettent correctement les origines null
+4. **Vérifier la correspondance de sous-chaîne** : Tester avec des domaines malveillants contenant des sous-chaînes de confiance
+5. **Vérifier les en-têtes Vary** : S'assurer que les applications incluent des en-têtes Vary appropriés pour les réponses en cache
 
-- **MISC 99**: "Cross Origin Resource Sharing: défauts de configurations, vulnérabilités et exploitations" - Comprehensive guide to CORS misconfigurations, vulnerabilities, and exploitation techniques. This is the primary reference for understanding CORS security issues.
+## Avertissements de Déploiement
 
-- **MISC HS 4**: "Architectures web sécurisées" - Secure web architecture principles including proper CORS configuration in modern web applications.
+⚠️ **AVERTISSEMENTS DE SÉCURITÉ CRITIQUES** ⚠️
 
-### Additional Resources
+Cette application est conçue à **des fins éducatives uniquement** et ne doit **JAMAIS** être déployée dans :
 
-- **MDN Web Docs - CORS**: Official documentation for Cross-Origin Resource Sharing specification and best practices
-  - https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+- Environnements de production
+- Réseaux accessibles publiquement
+- Tout environnement avec des données utilisateur réelles
+- Tout environnement connecté à Internet
 
-- **OWASP - CORS**: Security guidelines for implementing CORS correctly and avoiding common pitfalls
-  - https://owasp.org/www-community/attacks/CORS_OriginHeaderScrutiny
+### Environnements de Déploiement Recommandés
 
-## Contributing
+✅ **Environnements Sûrs** :
+- Environnement de développement local isolé
+- Salle de classe ou laboratoire de formation avec isolation réseau
+- Conteneur Docker sans accès réseau externe
+- Machines virtuelles sur réseaux isolés
+- Accès localhost uniquement
 
-This is an educational project. If you find issues or have suggestions for improvements, please open an issue or submit a pull request.
+## Documentation API
 
-## License
+Une fois l'application lancée, accédez à la documentation API interactive :
 
-This project is for educational purposes only. Use responsibly and only in authorized environments.
+- **Swagger UI** : http://localhost:8000/docs
+- **ReDoc** : http://localhost:8000/redoc
 
-## Acknowledgments
+## Références
 
-Based on research from MISC publications 98, 99, and HS 4. Special thanks to the security research community for documenting these vulnerabilities and helping improve web security.
+Ce projet est basé sur la recherche et les publications du magazine français de sécurité MISC :
+
+### Références Principales
+
+- **MISC 98** : "Comprendre le fonctionnement des CORS"
+- **MISC 99** : "Cross Origin Resource Sharing: défauts de configurations, vulnérabilités et exploitations"
+- **MISC HS 4** : "Architectures web sécurisées"
+
+### Ressources Additionnelles
+
+- **MDN Web Docs - CORS** : https://developer.mozilla.org/fr/docs/Web/HTTP/CORS
+- **OWASP - CORS** : https://owasp.org/www-community/attacks/CORS_OriginHeaderScrutiny
+
+## Contribution
+
+Ceci est un projet éducatif. Si vous trouvez des problèmes ou avez des suggestions d'amélioration, veuillez ouvrir une issue ou soumettre une pull request.
+
+## Licence
+
+Ce projet est à des fins éducatives uniquement. Utilisez de manière responsable et uniquement dans des environnements autorisés.
+
+## Remerciements
+
+Basé sur la recherche des publications MISC 98, 99 et HS 4. Merci spécial à la communauté de recherche en sécurité pour avoir documenté ces vulnérabilités et aidé à améliorer la sécurité web.
 
 ---
 
-**Remember**: This application contains intentionally vulnerable code. Never use these patterns in production applications. Always implement secure CORS configurations following the secure examples provided in this project.
-
-## 📚 Documentation
-
-This project demonstrates 5 critical CORS vulnerabilities based on MISC 99:
-
-1. **Wildcard with Credentials** - `Access-Control-Allow-Origin: *` with credentials enabled
-2. **Origin Reflection** - Automatic reflection of Origin header without validation
-3. **Null Origin** - Accepting `Origin: null` from sandboxed iframes
-4. **Permissive Filtering** - Using substring matching instead of exact matching
-5. **Missing Vary Header** - Cache poisoning due to missing `Vary: Origin`
-
-Each vulnerability has:
-- Vulnerable endpoint (`/api/vuln/*`)
-- Secure endpoint (`/api/sec/*`)
-- Attack script in `attacks/` directory
-- Interactive demo in web interface
-
-## 📁 Project Structure
-
-```
-cors_project/
-├── app/                    # FastAPI application
-│   ├── auth/              # Authentication module
-│   ├── middleware/        # CORS middleware
-│   ├── models/            # Data models
-│   ├── routers/           # API routes (vulnerable & secure)
-│   └── utils/             # Utilities (sanitization, etc.)
-├── attacks/               # Attack scripts
-│   ├── brute_force.py    # Wildcard attack
-│   ├── reflection.py     # Origin reflection attack
-│   ├── null_origin.py    # Null origin attack
-│   ├── permissive.py     # Permissive filtering attack
-│   └── vary_attack.py    # Vary header attack
-├── static/                # Frontend assets (CSS, JS)
-├── templates/             # HTML templates
-├── educational_content.json  # Educational content
-├── main.py               # Application entry point
-├── run_attack_cli.py     # CLI for running attacks
-└── requirements.txt      # Python dependencies
-```
+**Rappel** : Cette application contient du code intentionnellement vulnérable. Ne jamais utiliser ces patterns dans des applications de production. Toujours implémenter des configurations CORS sécurisées en suivant les exemples sécurisés fournis dans ce projet.

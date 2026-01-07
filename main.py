@@ -28,12 +28,10 @@ from app.error_handlers import (
     internal_server_error_handler
 )
 
-# Global educational content storage
 EDUCATIONAL_CONTENT = {}
 
 
 def load_educational_content():
-    """Load educational content from JSON file"""
     global EDUCATIONAL_CONTENT
     try:
         educational_path = Path("educational_content.json")
@@ -49,15 +47,11 @@ def load_educational_content():
         return False
 
 
-# Load educational content at module import time as fallback
-# This ensures it's available even if lifespan hasn't run yet (e.g., in tests)
 load_educational_content()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Application lifespan manager
     Handles startup and shutdown events
     """
     startup_start = time.time()
@@ -65,7 +59,6 @@ async def lifespan(app: FastAPI):
     print("🚀 Starting CORS Vulnerability Demonstration System")
     print("=" * 60)
     
-    # Startup: Load educational content
     if load_educational_content():
         print("✓ Educational content loaded successfully")
         print(f"  - {len(EDUCATIONAL_CONTENT.get('vulnerabilities', {}))} vulnerabilities documented")
@@ -73,7 +66,6 @@ async def lifespan(app: FastAPI):
     else:
         print("⚠ Warning: educational_content.json not found")
     
-    # Startup: Preload templates (verify they exist)
     try:
         templates_dir = Path("templates")
         if templates_dir.exists():
@@ -86,7 +78,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"⚠ Warning: Failed to preload templates: {e}")
     
-    # Startup: Verify static files exist
     try:
         static_dir = Path("static")
         if static_dir.exists():
@@ -98,31 +89,26 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"⚠ Warning: Failed to verify static files: {e}")
     
-    # Startup: Start session cleanup task
     session_store.start_cleanup_task()
     print("✓ Session store initialized with default users")
     print(f"  - {len(session_store.users)} test accounts available")
     print("✓ Session cleanup task started")
     
-    # Verify routers are registered
     print("✓ Routers registered:")
     print("  - Authentication (/api/auth)")
     print("  - Vulnerable endpoints (/api/vuln)")
     print("  - Secure endpoints (/api/sec)")
     print("  - Demo interface (/)")
     
-    # Verify middleware is applied
     print("✓ Middleware configured:")
     print("  - Custom CORS middleware (route-specific)")
     print("  - Authentication middleware")
     
-    # Note: Attack scripts use lazy loading (loaded on-demand)
     print("✓ Attack scripts configured for lazy loading")
     
     startup_duration = time.time() - startup_start
     print(f"✓ Initialization completed in {startup_duration:.2f} seconds")
     
-    # Verify startup time requirement (< 30 seconds)
     if startup_duration < 30:
         print(f"✓ Startup time requirement met ({startup_duration:.2f}s < 30s)")
     else:
@@ -134,7 +120,6 @@ async def lifespan(app: FastAPI):
     
     yield
     
-    # Shutdown: Stop session cleanup task
     print("\n" + "=" * 60)
     print("🛑 Shutting down CORS Vulnerability Demonstration System")
     print("=" * 60)
@@ -144,7 +129,6 @@ async def lifespan(app: FastAPI):
     print("=" * 60)
 
 
-# Create FastAPI application
 app = FastAPI(
     title="CORS Vulnerability Demonstration",
     description="Educational application demonstrating CORS misconfigurations",
@@ -152,31 +136,26 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add authentication middleware
 app.add_middleware(
     AuthenticationMiddleware,
     protected_paths=["/api/vuln/", "/api/sec/"]
 )
 
-# Add CORS middleware with route-specific configurations
 app.add_middleware(
     CustomCORSMiddleware,
     route_configs=ALL_ROUTE_CONFIGS
 )
 
-# Register routers
 app.include_router(auth.router)
 app.include_router(vulnerable.router)
 app.include_router(secure.router)
 app.include_router(demo.router)
 
-# Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
     return {
         "status": "healthy",
         "session_count": len(session_store.sessions),
@@ -184,13 +163,10 @@ async def health_check():
     }
 
 
-# Register error handlers
-# Handle FastAPI HTTPException
 from fastapi.exceptions import HTTPException as FastAPIHTTPException
 
 @app.exception_handler(FastAPIHTTPException)
 async def fastapi_http_exception_handler(request: Request, exc: FastAPIHTTPException):
-    """Route FastAPI HTTP exceptions to appropriate handlers based on status code"""
     if exc.status_code == status.HTTP_400_BAD_REQUEST:
         return await bad_request_handler(request, exc)
     elif exc.status_code == status.HTTP_401_UNAUTHORIZED:
@@ -202,19 +178,15 @@ async def fastapi_http_exception_handler(request: Request, exc: FastAPIHTTPExcep
     elif exc.status_code >= 500:
         return await internal_server_error_handler(request, exc)
     else:
-        # Default handler for other status codes
         return JSONResponse(
             status_code=exc.status_code,
             content={"error": exc.detail}
         )
 
-# Handle validation errors (422 -> 400)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 
-# Handle HTTP exceptions by status code
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    """Route HTTP exceptions to appropriate handlers based on status code"""
     if exc.status_code == status.HTTP_400_BAD_REQUEST:
         return await bad_request_handler(request, exc)
     elif exc.status_code == status.HTTP_401_UNAUTHORIZED:
@@ -226,16 +198,13 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     elif exc.status_code >= 500:
         return await internal_server_error_handler(request, exc)
     else:
-        # Default handler for other status codes
         return JSONResponse(
             status_code=exc.status_code,
             content={"error": exc.detail}
         )
 
-# Handle generic exceptions as 500 errors
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
-    """Handle any unhandled exceptions as 500 Internal Server Error"""
     return await internal_server_error_handler(request, exc)
 
 
